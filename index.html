@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ricky Brut | Official Token Dashboard</title>
+    <!-- Library Ethers.js v5 (Link yang Benar) -->
+    <script src="https://cdn.ethers.io"></script>
+    
+    <style>
+        :root {
+            --primary: #f3ba2f; /* Warna Khas BNB */
+            --dark: #121212;
+            --card-bg: #ffffff;
+            --text: #333;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: linear-gradient(135deg, #121212 0%, #1e1e1e 100%);
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 450px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 24px;
+            padding: 40px 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 25px 50px rgba(0,0,0,0.3);
+        }
+
+        .logo-token {
+            width: 110px;
+            height: 110px;
+            border-radius: 50%;
+            margin-bottom: 20px;
+            border: 4px solid var(--primary);
+            box-shadow: 0 0 20px rgba(243, 186, 47, 0.3);
+            object-fit: cover;
+        }
+
+        h1 { margin: 10px 0; font-size: 2rem; letter-spacing: -1px; color: var(--primary); }
+        p.subtitle { color: #aaa; margin-bottom: 30px; font-size: 0.9rem; }
+
+        .balance-section {
+            background: rgba(243, 186, 47, 0.1);
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 30px;
+            border: 1px dashed var(--primary);
+        }
+
+        .balance-label { font-size: 0.8rem; text-transform: uppercase; color: #f3ba2f; opacity: 0.8; letter-spacing: 2px; }
+        .balance-amount { font-size: 2.5rem; font-weight: 800; margin: 10px 0; }
+
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 16px;
+            margin: 12px 0;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary { background: var(--primary); color: black; }
+        .btn-secondary { background: transparent; color: white; border: 1px solid rgba(255,255,255,0.2); }
+        
+        .btn:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
+        .btn-primary:hover { background: #e0ac2a; }
+        .btn-secondary:hover { background: rgba(255,255,255,0.1); }
+
+        #status { font-size: 0.7rem; color: #777; margin-top: 20px; word-break: break-all; }
+        .badge { background: #28a745; padding: 4px 12px; border-radius: 20px; font-size: 0.7rem; margin-bottom: 10px; display: inline-block; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="glass-card">
+        <span class="badge">BNB SMART CHAIN TESTNET</span>
+        <img src="https://gateway.pinata.cloud" alt="Ricky Brut" class="logo-token">
+        <h1>Ricky Brut</h1>
+        <p class="subtitle">Official Token Community Dashboard</p>
+
+        <div class="balance-section">
+            <div class="balance-label">Saldo BRUT Anda</div>
+            <div class="balance-amount"><span id="balance">0.00</span></div>
+            <div style="font-weight: 600; color: var(--primary);">BRUT</div>
+        </div>
+
+        <button class="btn btn-primary" onclick="connectWallet()">Hubungkan MetaMask</button>
+        <button class="btn btn-secondary" onclick="addTokenToMetaMask()">Simpan Logo ke Dompet</button>
+        
+        <p id="status">Status: Dompet Terputus</p>
+    </div>
+</div>
+
+<script>
+    // DATA KONFIGURASI RICKY BRUT
+    const contractAddress = "0x9857Ba874F0Cc4Ad35b49728e50CBEA051339de5";
+    const tokenSymbol = "BRUT"; 
+    const tokenDecimals = 18;
+    const tokenImage = "https://gateway.pinata.cloud";
+
+    const abi = [
+        "function balanceOf(address) view returns (uint256)"
+    ];
+
+    let provider, signer, contract;
+
+    async function connectWallet() {
+        if (typeof window.ethereum !== 'undefined') {
+            try {
+                const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+                provider = new ethers.providers.Web3Provider(window.ethereum);
+                signer = provider.getSigner();
+                const address = await signer.getAddress();
+                
+                contract = new ethers.Contract(contractAddress, abi, provider);
+                const balanceRaw = await contract.balanceOf(address);
+                const balanceFormatted = ethers.utils.formatEther(balanceRaw);
+
+                document.getElementById("balance").innerText = parseFloat(balanceFormatted).toLocaleString(undefined, {minimumFractionDigits: 2});
+                document.getElementById("status").innerText = "Aktif: " + address;
+                
+            } catch (err) {
+                console.error(err);
+                alert("Gagal menyambungkan dompet.");
+            }
+        } else {
+            alert("MetaMask tidak ditemukan!");
+        }
+    }
+
+    async function addTokenToMetaMask() {
+        if (!window.ethereum) return alert("Instal MetaMask!");
+        try {
+            await window.ethereum.request({
+                method: 'wallet_watchAsset',
+                params: {
+                    type: 'ERC20',
+                    options: {
+                        address: contractAddress,
+                        symbol: tokenSymbol,
+                        decimals: tokenDecimals,
+                        image: tokenImage,
+                    },
+                },
+            });
+        } catch (error) {
+            console.log(error);
+        }
+    }
+</script>
+
+</body>
+</html>
